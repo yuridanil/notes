@@ -1,0 +1,252 @@
+import './Notes.css';
+import { Rnd } from 'react-rnd';
+import { useState, useEffect, useRef } from 'react';
+import { COLORS } from './Constants';
+import Button from './Button';
+
+const GRID_SIZE = 50;
+const SAVE_TIMEOUT = 2000;
+
+Array.prototype.max = function () {
+  return Math.max.apply(null, this.id);
+};
+
+function Notes() {
+  const [notes, setNotes] = useState([]);
+  const [topId, setTopId] = useState(-1);
+  const [dragId, setDragId] = useState(-1);
+  const nextColor = useRef(-1);
+  const saveTimeout = useRef();
+  const [svgclass, setSvgclass] = useState('sigest-controller color-default');
+
+  useEffect(() => {
+
+    setStatus('wait');
+    fetch('http://localhost:5000/api/load', {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json'
+      },
+      body: '{"user_id":1}'
+    })
+      .then(response => response.json())
+      .then(data => {
+        if (data.result === 'ok') {
+          setNotes(data.items);
+          setStatus('ok');
+        }
+        else
+          setStatus('error');
+      })
+      .catch(error => {
+        setStatus('error');
+      });
+  }, []);
+
+  useEffect((e) => {
+    waitSave(e);
+    console.log(notes);
+  }, [notes]);
+
+  function waitSave() {
+    setStatus('default');
+    clearTimeout(saveTimeout.current);
+    saveTimeout.current = setTimeout(() => {
+      saveNotes();
+    }, SAVE_TIMEOUT);
+  }
+
+  function setOnTop(id) {
+    setTimeout(() => {
+      try {
+        document.querySelector('textarea[id="' + id + '"]').focus();
+      }
+      catch (e) {
+      }
+    }, 250);
+  }
+
+  function dragStart(e, d) {
+    let id = parseInt(e.target.closest('.sigest-item').id);
+    setTopId(id);
+    setDragId(id);
+  }
+
+  function dragStop(e, d) {
+    if (dragId !== -1) {
+      setNotes(prevNotes =>
+        prevNotes.map((item) => {
+          if (item.id === dragId)
+            item.position = { x: Math.max(d.x, 0), y: Math.max(d.y, 0) };
+          return item;
+        })
+      );
+      setDragId(-1);
+      waitSave();
+    }
+  }
+
+  function resizeStart(e, direction, ref, delta, position) {
+    let id = parseInt(e.target.closest('.sigest-item').id);
+    setTopId(id);
+    setDragId(id);
+  }
+
+  function resizeStop(e, direction, ref, delta, position) {
+    if (dragId !== -1) {
+      setNotes(prevNotes =>
+        prevNotes.map((item) => {
+          if (item.id === dragId)
+            item.size = { width: ref.style.width, height: ref.style.height };
+          return item;
+        })
+      );
+      setDragId(-1);
+      waitSave();
+    }
+  }
+
+  function addNote(e) {
+    e.stopPropagation();
+    nextColor.current++;
+    if (nextColor.current >= COLORS.length) nextColor.current = 0;
+    let id = notes.length === 0 ? 0 : notes.reduce((accumulator, currentValue) => { return Math.max(accumulator, currentValue.id); }, notes[0].id) + 1;
+    setNotes([...notes, {
+      "id": id,
+      "position": {
+        "x": Math.trunc(((e._reactName === 'onDoubleClick' ? e.clientX : e.changedTouches[0].clientX) + e.target.scrollLeft) / GRID_SIZE) * GRID_SIZE,
+        "y": Math.trunc(((e._reactName === 'onDoubleClick' ? e.clientY : e.changedTouches[0].clientY) + e.target.scrollTop) / GRID_SIZE) * GRID_SIZE
+      },
+      "size": { "width": GRID_SIZE * 6, "height": GRID_SIZE * 6 },
+      "color": COLORS[nextColor.current],
+      "content": "",
+      "fontsize": 1.3,
+    }]);
+    setOnTop(id);
+    setTopId(id);
+    waitSave();
+  }
+
+  const handleTextareaChange = (id, newContent) => {
+    setNotes(prevPanels =>
+      prevPanels.map(item =>
+        item.id === id ? { ...item, content: newContent } : item
+      )
+    );
+    waitSave();
+  };
+
+  function handleSaveClick(e) {
+    e.stopPropagation();
+    saveNotes();
+  }
+
+  function setStatus(status) {
+    setSvgclass('sigest-controller color-' + status);
+  }
+
+  function saveNotes() {
+    if (notes.length === 0) return;
+    setStatus('wait');
+    fetch('http://localhost:5000/api/save', {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json'
+      },
+      body: JSON.stringify({ user_id: 1, notes: notes })
+    })
+      .then(response => response.json())
+      .then(data => {
+        if (data.result === 'ok')
+          setStatus('ok');
+        else
+          setStatus('error');
+      })
+      .catch(error => {
+        setStatus('error');
+      });
+  }
+
+  function setNote(id, props) {
+    setNotes(prevNotes =>
+      prevNotes.map(item => {
+        return item.id === parseInt(id) ? { ...item, ...props } : item;
+      })
+    );
+    waitSave();
+  }
+
+  function fontplusClick(e) {
+    e.stopPropagation();
+    
+    setNote(e.target.closest('.sigest-item').id, { color: "#ff0000" })
+  }
+
+  return (
+    <div className="sigest"
+      onDoubleClick={e => {
+        addNote(e);
+      }}
+    // onTouchEnd={e => addNote(e)}
+    >
+      {notes.map((e, i) => {
+        let newStyle = {
+          zIndex: topId === e.id ? 1 : 0,
+          opacity: dragId === e.id ? 0.8 : 1,
+          display: "flex",
+          flexDirection: "column",
+          flexWrap: "wrap",
+          alignItems: "flex-start"
+        }
+        return <Rnd
+          className='sigest-item'
+          id={e.id}
+          key={e.id}
+          style={newStyle}
+          enableResizing={{ top: false, right: true, bottom: true, left: false, topRight: false, bottomRight: true, bottomLeft: false, topLeft: false }}
+          onDragStart={(e, d) => { dragStart(e, d) }}
+          onDragStop={(e, d) => { dragStop(e, d) }}
+          onDoubleClick={e => e.stopPropagation()}
+          onTouchStart={e => e.stopPropagation()}
+          onResizeStart={(e, direction, ref, delta, position) => { resizeStart(e, direction, ref, delta, position) }}
+          onResizeStop={(e, direction, ref, delta, position) => { resizeStop(e, direction, ref, delta, position) }}
+          position={e.position}
+          size={e.size}
+          dragGrid={[GRID_SIZE, GRID_SIZE]}
+          resizeGrid={[GRID_SIZE, GRID_SIZE]}
+          minWidth={GRID_SIZE * 3}
+          minHeight={GRID_SIZE * 2}
+          resizeHandleClasses={{ right: "rightHandleClass", bottom: "bottomHandleClass" }}
+        >
+          <div className='toolbar'>
+            <Button icon='fontplus' onClick={e => fontplusClick(e)} onMouseDown={e => { console.log(e.target); e.stopPropagation(); }} />
+            <Button icon='close' onClick={(e) => console.log(e)} />
+          </div>
+          <textarea className='sigest-text'
+            id={e.id}
+            key={e.id}
+            value={e.content}
+            // value={e.id}
+            onChange={(event) => handleTextareaChange(e.id, event.target.value)}
+            onScroll={() => setDragId(-1)}
+            style={{ backgroundColor: e.color, borderColor: e.color, fontSize: (e.fontsize || 1.2) + "em" }}
+            placeholder="Place your text here..."
+          >
+          </textarea>
+        </Rnd>
+      })}
+      <div className='sigest-status'></div>
+      <div className='sigest-copyright'>Notes © 2025 Yuri Danilov</div>
+      <svg
+        onClick={e => handleSaveClick(e)}
+        onMouseDown={e => e.stopPropagation()}
+        className={svgclass} version="1.1" id="svg1" xmlns="http://www.w3.org/2000/svg" width="800px" height="800px" viewBox="0 0 407.096 407.096">
+        <path d="M402.115,84.008L323.088,4.981C319.899,1.792,315.574,0,311.063,0H17.005C7.613,0,0,7.614,0,17.005v373.086 c0,9.392,7.613,17.005,17.005,17.005h373.086c9.392,0,17.005-7.613,17.005-17.005V96.032 C407.096,91.523,405.305,87.197,402.115,84.008z M300.664,163.567H67.129V38.862h233.535V163.567z" />
+        <path d="M214.051,148.16h43.08c3.131,0,5.668-2.538,5.668-5.669V59.584c0-3.13-2.537-5.668-5.668-5.668h-43.08 c-3.131,0-5.668,2.538-5.668,5.668v82.907C208.383,145.622,210.92,148.16,214.051,148.16z" />
+      </svg>
+    </div>
+  );
+
+}
+
+export default Notes;
