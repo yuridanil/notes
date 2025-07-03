@@ -1,5 +1,5 @@
 .notes {
-    opacity: 0.3;
+    opacity: 1.0;
     position: absolute;
     width: 100%;
     height: 100%;
@@ -43,10 +43,17 @@
     border-bottom: 8px solid;
 
     scrollbar-gutter: stable;
-    box-shadow: 1px 1px 4px 0px #cccccc;
+    box-shadow: 1px 1px 4px 0px #aaaaaa;
 
     cursor: default;
+}
 
+.note-text:focus {
+    box-shadow: 1px 1px 8px 0px #aaaaaa;
+}
+
+.note-text::before {
+    border: 10px solid #ff0000;
 }
 
 .rightHandleClass {

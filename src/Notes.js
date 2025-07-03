@@ -5,18 +5,12 @@ import { COLORS } from './Constants';
 import Button from './Button';
 
 const GRID_SIZE = 50;
-const SAVE_TIMEOUT = 2000;
-
-Array.prototype.max = function () {
-  return Math.max.apply(null, this.id);
-};
+const SAVE_TIMEOUT = 100;
 
 function Notes() {
   const [notes, setNotes] = useState([]);
-  const [topId, setTopId] = useState(-1);
   const [dragId, setDragId] = useState(-1);
   const [status, setStatus] = useState(0);
-  const nextColor = useRef(-1);
   const saveTimeout = useRef();
 
   function loadNotes() {
@@ -42,7 +36,6 @@ function Notes() {
           setStatus(3);
         });
     } else {
-      console.log('from storage');
       setNotes(JSON.parse(localStorage.getItem('notes')));
     }
   }
@@ -62,7 +55,6 @@ function Notes() {
           setStatus(0);
         }
         else {
-          console.log(data.error);
           setStatus(3);
         }
       })
@@ -73,21 +65,42 @@ function Notes() {
 
   function addNote(e) {
     e.stopPropagation();
-    nextColor.current++;
-    if (nextColor.current >= COLORS.length) nextColor.current = 0;
-    let id = notes.length === 0 ? 0 : notes.reduce((accumulator, currentValue) => { return Math.max(accumulator, currentValue.id); }, notes[0].id) + 1;
+    let id, colorIndex;
+    if (notes.length > 0) {
+      id = notes.reduce((accumulator, currentValue) => { return Math.max(accumulator, currentValue.id); }, notes[0].id) + 1;
+      colorIndex = COLORS.indexOf(notes.at(-1).color) + 1;
+      if (colorIndex >= COLORS.length)
+        colorIndex = 0;
+    } else {
+      id = 0;
+      colorIndex = 0;
+    }
     setNotes([...notes, {
       "id": id,
+      "zindex": notes.length,
       "position": {
         "x": Math.trunc(((e._reactName === 'onDoubleClick' ? e.clientX : e.changedTouches[0].clientX) + e.target.scrollLeft) / GRID_SIZE) * GRID_SIZE,
         "y": Math.trunc(((e._reactName === 'onDoubleClick' ? e.clientY : e.changedTouches[0].clientY) + e.target.scrollTop) / GRID_SIZE) * GRID_SIZE
       },
       "size": { "width": GRID_SIZE * 6, "height": GRID_SIZE * 6 },
-      "color": COLORS[nextColor.current],
+      "color": COLORS[colorIndex],
       "content": "",
-      "fontsize": 0.3,
+      "fontsize": 0.5
     }]);
-    setTopId(id);
+  }
+
+  function setTopId(id) {
+    let itemZindex = notes.find(e => e.id === id).zindex;
+    console.log(itemZindex);
+    let newNotes = structuredClone(notes);
+    newNotes = newNotes.map((e) => {
+      if (e.id === id)
+        e.zindex = notes.length - 1;
+      else if (e.zindex > itemZindex)
+        e.zindex = e.zindex - 1;
+      return e;
+    });
+    setNotes(newNotes);
   }
 
   function dropNote(e) {
@@ -118,13 +131,13 @@ function Notes() {
 
   function dragStop(e, d) {
     if (dragId !== -1) {
-      setNotes(prevNotes =>
-        prevNotes.map((item) => {
-          if (item.id === dragId)
-            item.position = { x: Math.max(d.x, 0), y: Math.max(d.y, 0) };
-          return item;
-        })
-      );
+      let newNotes = structuredClone(notes);
+      newNotes.map((item) => {
+        if (item.id === dragId)
+          item.position = { x: Math.max(d.x, 0), y: Math.max(d.y, 0) };
+        return item;
+      })
+      setNotes(newNotes);
       setDragId(-1);
     }
   }
@@ -156,15 +169,10 @@ function Notes() {
     );
   };
 
-  function handleSaveClick(e) {
-    e.stopPropagation();
-    saveNotes();
-  }
-
   function incFontClick(e) {
     setNotes(prevNotes =>
       prevNotes.map(item => {
-        return item.id === parseInt(e.target.closest('.note').id) ? { ...item, fontsize: Math.min(item.fontsize + 0.1, 3.5) } : item;
+        return item.id === parseInt(e.target.closest('.note').id) ? { ...item, fontsize: Math.round(Math.min(item.fontsize + 0.1, 3.5) * 10) / 10 } : item;
       })
     );
   }
@@ -172,7 +180,7 @@ function Notes() {
   function decFontClick(e) {
     setNotes(prevNotes =>
       prevNotes.map(item => {
-        return item.id === parseInt(e.target.closest('.note').id) ? { ...item, fontsize: Math.max(item.fontsize - 0.1, 0.5) } : item;
+        return item.id === parseInt(e.target.closest('.note').id) ? { ...item, fontsize: Math.round(Math.max(item.fontsize - 0.1, 0.5) * 10) / 10 } : item;
       })
     );
   }
@@ -186,7 +194,7 @@ function Notes() {
     >
       {notes.map((e, i) => {
         let newStyle = {
-          zIndex: topId === e.id ? 1 : 0,
+          zIndex: e.zindex,
           opacity: dragId === e.id ? 0.8 : 1,
           display: "flex",
           flexDirection: "column",
@@ -224,7 +232,7 @@ function Notes() {
             <Button icon='drop' onClick={e => dropNote(e)} />
           </div>
           <textarea className='note-text'
-            autoFocus={e.id === topId}
+            autoFocus={e.zindex === notes.length - 1}
             id={e.id}
             key={e.id}
             value={e.content}
@@ -234,9 +242,10 @@ function Notes() {
             placeholder="Place your text here..."
           >
           </textarea>
+          <p style={{ zIndex: 10000 }}>{e.id}</p>
         </Rnd>
       })}
-      {<div className='status'>{status === 1 && "•"}{status === 2 && "○"}{status === 3 && "e"}</div>}
+      {<div className='status'>{status === 0 && ""}{status === 1 && "•"}{status === 2 && "○"}{status === 3 && "e"}</div>}
       <div className='notes-copyright'>Notes © 2025 Yuri Danilov</div>
     </div>
   );

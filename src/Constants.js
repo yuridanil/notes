@@ -1,10 +1,10 @@
 export const COLORS = [
-    '#ffeeee',
-    '#eeffee',
-    '#eeeeff',
     '#ffffee',
+    '#eeffee',
+    '#eeffff',
+    '#ffeeee',
+    '#eeeeff',
     '#ffeeff',
-    '#eeffff'
+    '#eeeeee',
+    '#fefefe',
 ];
-
-
