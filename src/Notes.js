@@ -5,17 +5,18 @@ import { COLORS } from './Constants';
 import Button from './Button';
 
 const GRID_SIZE = 50;
-const SAVE_TIMEOUT = 100;
+const SAVE_TIMEOUT = 3000;
 
 function Notes() {
-  const [notes, setNotes] = useState([]);
+  const [notes, setNotes] = useState(JSON.parse(localStorage.getItem('notes')));
   const [dragId, setDragId] = useState(-1);
   const [status, setStatus] = useState(0);
+  const [saved, setSaved] = useState(localStorage.getItem('saved'));
   const saveTimeout = useRef();
 
   function loadNotes() {
     setStatus(2);
-    if (JSON.parse(localStorage.getItem('saved')) === true) {
+    if (localStorage.getItem('saved') === 'true') {
       fetch('http://localhost:5000/api/load', {
         method: 'POST',
         headers: {
@@ -53,6 +54,7 @@ function Notes() {
       .then(data => {
         if (data.result === 'ok') {
           setStatus(0);
+          setSaved(true);
         }
         else {
           setStatus(3);
@@ -91,7 +93,6 @@ function Notes() {
 
   function setTopId(id) {
     let itemZindex = notes.find(e => e.id === id).zindex;
-    console.log(itemZindex);
     let newNotes = structuredClone(notes);
     newNotes = newNotes.map((e) => {
       if (e.id === id)
@@ -114,6 +115,10 @@ function Notes() {
     loadNotes();
   }, []);
 
+  useEffect(() => {
+    localStorage.setItem('saved', saved);
+  }, [saved]);
+
   useEffect((e) => {
     localStorage.setItem('notes', JSON.stringify(notes));
     clearTimeout(saveTimeout.current);
@@ -123,13 +128,16 @@ function Notes() {
     }, SAVE_TIMEOUT);
   }, [notes]);
 
-  function dragStart(e, d) {
-    let id = parseInt(e.target.closest('.note').id);
+  function moveStart(id) {
     setTopId(id);
     setDragId(id);
-  }
+  };
 
-  function dragStop(e, d) {
+  function moveStop() {
+    setDragId(-1);
+  };
+
+  function drag(e, d) {
     if (dragId !== -1) {
       let newNotes = structuredClone(notes);
       newNotes.map((item) => {
@@ -138,51 +146,42 @@ function Notes() {
         return item;
       })
       setNotes(newNotes);
-      setDragId(-1);
+      setSaved(false);
     }
   }
 
-  function resizeStart(e, direction, ref, delta, position) {
-    let id = parseInt(e.target.closest('.note').id);
-    setTopId(id);
-    setDragId(id);
-  }
-
-  function resizeStop(e, direction, ref, delta, position) {
+  function resize(x, y, w, h) {
     if (dragId !== -1) {
-      setNotes(prevNotes =>
-        prevNotes.map((item) => {
-          if (item.id === dragId)
-            item.size = { width: parseInt(ref.style.width), height: parseInt(ref.style.height) };
-          return item;
-        })
-      );
-      setDragId(-1);
+      let newNotes = structuredClone(notes);
+      newNotes.map((item) => {
+        if (item.id === dragId) {
+          item.position = { x: Math.max(x, 0), y: Math.max(y, 0) };
+          item.size = { width: parseInt(w), height: parseInt(h) };
+        }
+        return item;
+      })
+      setNotes(newNotes);
+      setSaved(false);
     }
   }
 
   const handleTextareaChange = (id, newContent) => {
-    setNotes(prevPanels =>
-      prevPanels.map(item =>
-        item.id === id ? { ...item, content: newContent } : item
-      )
-    );
+    setNotes(structuredClone(notes).map(item => item.id === id ? { ...item, content: newContent } : item));
+    setSaved(false);
   };
 
-  function incFontClick(e) {
-    setNotes(prevNotes =>
-      prevNotes.map(item => {
-        return item.id === parseInt(e.target.closest('.note').id) ? { ...item, fontsize: Math.round(Math.min(item.fontsize + 0.1, 3.5) * 10) / 10 } : item;
-      })
-    );
+  function incFontClick(id) {
+    setNotes(structuredClone(notes).map(item =>
+      item.id === id ? { ...item, fontsize: Math.round(Math.min(item.fontsize + 0.1, 3.5) * 10) / 10 } : item
+    ));
+    setSaved(false);
   }
 
-  function decFontClick(e) {
-    setNotes(prevNotes =>
-      prevNotes.map(item => {
-        return item.id === parseInt(e.target.closest('.note').id) ? { ...item, fontsize: Math.round(Math.max(item.fontsize - 0.1, 0.5) * 10) / 10 } : item;
-      })
-    );
+  function decFontClick(id) {
+    setNotes(structuredClone(notes).map(item =>
+      item.id === id ? { ...item, fontsize: Math.round(Math.max(item.fontsize - 0.1, 0.5) * 10) / 10 } : item
+    ));
+    setSaved(false);
   }
 
   return (
@@ -206,20 +205,22 @@ function Notes() {
           id={e.id}
           key={e.id}
           style={newStyle}
-          enableResizing={{ top: false, right: true, bottom: true, left: false, topRight: false, bottomRight: true, bottomLeft: false, topLeft: false }}
-          onDragStart={(e, d) => { dragStart(e, d) }}
-          onDragStop={(e, d) => { dragStop(e, d) }}
+          enableResizing={{ top: true, right: true, bottom: true, left: true, topRight: true, bottomRight: true, bottomLeft: true, topLeft: true }}
+          onDragStart={() => moveStart(e.id)}
+          onDrag={(e, d) => drag(e, d)}
+          onDragStop={() => moveStop()}
+          onResizeStart={() => moveStart(e.id)}
+          onResize={(e, direction, ref, delta, position) => { resize(position.x, position.y, ref.style.width, ref.style.height) }}
+          onResizeStop={() => moveStop()}
           onDoubleClick={e => e.stopPropagation()}
           onTouchStart={e => e.stopPropagation()}
-          onResizeStart={(e, direction, ref, delta, position) => { resizeStart(e, direction, ref, delta, position) }}
-          onResizeStop={(e, direction, ref, delta, position) => { resizeStop(e, direction, ref, delta, position) }}
           position={e.position}
           size={e.size}
           dragGrid={[GRID_SIZE, GRID_SIZE]}
           resizeGrid={[GRID_SIZE, GRID_SIZE]}
           minWidth={GRID_SIZE * 3}
           minHeight={GRID_SIZE * 2}
-          resizeHandleClasses={{ right: "rightHandleClass", bottom: "bottomHandleClass" }}
+          resizeHandleClasses={{ left: "horizHandleClass", right: "horizHandleClass", top: "vertHandleClass", bottom: "vertHandleClass" }}
         >
           <div className='toolbar'
             onMouseDown={(e) => {
@@ -227,8 +228,8 @@ function Notes() {
               e.preventDefault();
             }}
           >
-            <Button icon='decfont' onClick={e => decFontClick(e)} />
-            <Button icon='incfont' onClick={e => incFontClick(e)} />
+            <Button icon='decfont' onClick={() => decFontClick(e.id)} />
+            <Button icon='incfont' onClick={() => incFontClick(e.id)} />
             <Button icon='drop' onClick={e => dropNote(e)} />
           </div>
           <textarea className='note-text'
@@ -242,10 +243,10 @@ function Notes() {
             placeholder="Place your text here..."
           >
           </textarea>
-          <p style={{ zIndex: 10000 }}>{e.id}</p>
+          {/* <p style={{ zIndex: 10000 }}>{e.id}</p> */}
         </Rnd>
       })}
-      {<div className='status'>{status === 0 && ""}{status === 1 && "•"}{status === 2 && "○"}{status === 3 && "e"}</div>}
+      {<div className='status' style={{color: status === 3 ? 'red' : 'gray'}}>{status === 0 && ""}{status === 1 && "•"}{[2, 3].includes(status) && "⬤"}</div>}
       <div className='notes-copyright'>Notes © 2025 Yuri Danilov</div>
     </div>
   );
