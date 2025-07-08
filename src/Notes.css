@@ -1,9 +1,10 @@
 .notes {
-    opacity: 0.2;
+    opacity: 1.0;
     position: absolute;
     width: 100%;
     height: 100%;
     overflow: auto;
+    /* user-select: none; */
 }
 
 .note {
@@ -46,6 +47,7 @@
     box-shadow: 1px 1px 4px 0px #aaaaaa;
 
     cursor: default;
+    user-select: all;
 }
 
 .note-text:focus {
@@ -87,11 +89,15 @@
     cursor: default;
 }
 
-.svg-button {
+.button {
+    display: flex;
     width: 14px;
     height: 14px;
     cursor: default;
 }
+.icon-close {background-image: url(icon-close.svg)}
+.icon-plus {background-image: url(icon-plus.svg)}
+.icon-minus {background-image: url(icon-minus.svg)}
 
 .notes-copyright {
     position: fixed;

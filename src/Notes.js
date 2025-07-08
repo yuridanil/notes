@@ -1,18 +1,17 @@
 import './Notes.css';
 import { Rnd } from 'react-rnd';
 import { useState, useEffect, useRef } from 'react';
-import { COLORS } from './Constants';
-import Button from './Button';
-
-const GRID_SIZE = 50;
-const SAVE_TIMEOUT = 3000;
+import * as Const from './Constants';
 
 function Notes() {
   const [notes, setNotes] = useState(JSON.parse(localStorage.getItem('notes')));
   const [dragId, setDragId] = useState(-1);
+  const [transparentId, setTransparentId] = useState(-1);
   const [status, setStatus] = useState(0);
   const [saved, setSaved] = useState(localStorage.getItem('saved'));
-  const saveTimeout = useRef();
+  const saveTimeout = useRef(null);
+  const touchTimeout = useRef(null);
+  const touchStartTime = useRef(null);
 
   function loadNotes() {
     setStatus(2);
@@ -70,8 +69,8 @@ function Notes() {
     let id, colorIndex;
     if (notes.length > 0) {
       id = notes.reduce((accumulator, currentValue) => { return Math.max(accumulator, currentValue.id); }, notes[0].id) + 1;
-      colorIndex = COLORS.indexOf(notes.at(-1).color) + 1;
-      if (colorIndex >= COLORS.length)
+      colorIndex = Const.COLORS.indexOf(notes.at(-1).color) + 1;
+      if (colorIndex >= Const.COLORS.length)
         colorIndex = 0;
     } else {
       id = 0;
@@ -81,13 +80,13 @@ function Notes() {
       "id": id,
       "zindex": notes.length,
       "position": {
-        "x": Math.trunc(((e._reactName === 'onDoubleClick' ? e.clientX : e.changedTouches[0].clientX) + e.target.scrollLeft) / GRID_SIZE) * GRID_SIZE,
-        "y": Math.trunc(((e._reactName === 'onDoubleClick' ? e.clientY : e.changedTouches[0].clientY) + e.target.scrollTop) / GRID_SIZE) * GRID_SIZE
+        "x": Math.trunc(((e._reactName === 'onDoubleClick' ? e.clientX : e.changedTouches[0].clientX) + e.target.scrollLeft) / Const.GRID_SIZE) * Const.GRID_SIZE,
+        "y": Math.trunc(((e._reactName === 'onDoubleClick' ? e.clientY : e.changedTouches[0].clientY) + e.target.scrollTop) / Const.GRID_SIZE) * Const.GRID_SIZE
       },
-      "size": { "width": GRID_SIZE * 6, "height": GRID_SIZE * 6 },
-      "color": COLORS[colorIndex],
+      "size": { "width": Const.GRID_SIZE * 6, "height": Const.GRID_SIZE * 6 },
+      "color": Const.COLORS[colorIndex],
       "content": "",
-      "fontsize": 0.5
+      "fontsize": Const.DEFAULT_FONT_SIZE
     }]);
   }
 
@@ -125,7 +124,7 @@ function Notes() {
     setStatus(1);
     saveTimeout.current = setTimeout(() => {
       saveNotes();
-    }, SAVE_TIMEOUT);
+    }, Const.SAVE_TIMEOUT);
   }, [notes]);
 
   function moveStart(id) {
@@ -135,10 +134,12 @@ function Notes() {
 
   function moveStop() {
     setDragId(-1);
+    setTransparentId(-1);
   };
 
   function drag(e, d) {
     if (dragId !== -1) {
+      setTransparentId(dragId);
       let newNotes = structuredClone(notes);
       newNotes.map((item) => {
         if (item.id === dragId)
@@ -152,6 +153,7 @@ function Notes() {
 
   function resize(x, y, w, h) {
     if (dragId !== -1) {
+      setTransparentId(dragId);
       let newNotes = structuredClone(notes);
       newNotes.map((item) => {
         if (item.id === dragId) {
@@ -186,15 +188,21 @@ function Notes() {
 
   return (
     <div className="notes"
-      onDoubleClick={e => {
-        addNote(e);
+      onDoubleClick={e => addNote(e)}
+      onTouchStart={e => {
+        touchStartTime.current = Date.now();
+        touchTimeout.current = setTimeout(i => { addNote(e) }, Const.TOUCH_TIMEOUT);
       }}
-    // onTouchEnd={e => addNote(e)}
+      onTouchEnd={e => {
+        if (Date.now() - touchStartTime.current < 500)
+          clearTimeout(touchTimeout.current);
+        e.preventDefault();
+      }}
     >
       {notes.map((e, i) => {
         let newStyle = {
           zIndex: e.zindex,
-          opacity: dragId === e.id ? 0.8 : 1,
+          opacity: transparentId === e.id ? Const.MOVE_TRANSPARENCY : 1,
           display: "flex",
           flexDirection: "column",
           flexWrap: "wrap",
@@ -214,23 +222,21 @@ function Notes() {
           onResizeStop={() => moveStop()}
           onDoubleClick={e => e.stopPropagation()}
           onTouchStart={e => e.stopPropagation()}
+          onTouchEnd={e => e.stopPropagation()}
           position={e.position}
           size={e.size}
-          dragGrid={[GRID_SIZE, GRID_SIZE]}
-          resizeGrid={[GRID_SIZE, GRID_SIZE]}
-          minWidth={GRID_SIZE * 3}
-          minHeight={GRID_SIZE * 2}
+          dragGrid={[Const.GRID_SIZE, Const.GRID_SIZE]}
+          resizeGrid={[Const.GRID_SIZE, Const.GRID_SIZE]}
+          minWidth={Const.GRID_SIZE * 3}
+          minHeight={Const.GRID_SIZE * 2}
           resizeHandleClasses={{ left: "horizHandleClass", right: "horizHandleClass", top: "vertHandleClass", bottom: "vertHandleClass" }}
         >
           <div className='toolbar'
-            onMouseDown={(e) => {
-              e.stopPropagation();
-              e.preventDefault();
-            }}
-          >
-            <Button icon='decfont' onClick={() => decFontClick(e.id)} />
-            <Button icon='incfont' onClick={() => incFontClick(e.id)} />
-            <Button icon='drop' onClick={e => dropNote(e)} />
+            onMouseDown={e => { e.stopPropagation(); }}
+            onTouchStart={e => { e.stopPropagation(); }}>
+            <div className="button icon-minus" onClick={() => decFontClick(e.id)} onTouchStart={() => decFontClick(e.id)} />
+            <div className="button icon-plus" onClick={() => incFontClick(e.id)} onTouchStart={() => incFontClick(e.id)} />
+            <div className="button icon-close" onClick={e => dropNote(e)} onTouchStart={e => dropNote(e)} />
           </div>
           <textarea className='note-text'
             autoFocus={e.zindex === notes.length - 1}
@@ -246,7 +252,7 @@ function Notes() {
           {/* <p style={{ zIndex: 10000 }}>{e.id}</p> */}
         </Rnd>
       })}
-      {<div className='status' style={{color: status === 3 ? 'red' : 'gray'}}>{status === 0 && ""}{status === 1 && "•"}{[2, 3].includes(status) && "⬤"}</div>}
+      {<div className='status' style={{ color: status === 3 ? 'red' : 'gray' }}>{status === 0 && ""}{status === 1 && "•"}{[2, 3].includes(status) && "⬤"}</div>}
       <div className='notes-copyright'>Notes © 2025 Yuri Danilov</div>
     </div>
   );

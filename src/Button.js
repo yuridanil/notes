@@ -26,7 +26,7 @@ function Button({ icon, onClick }) {
             <svg className='svg-button' viewBox='0 0 64 64' xmlns="http://www.w3.org/2000/svg">
                 <path stroke="#aaaaaa" strokeWidth={strokeWidth} strokeLinecap="round" d={pathData} />
             </svg>
-        </div>
+        </div >
     )
 }
 
