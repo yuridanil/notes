@@ -1,0 +1,5 @@
+<svg class="svg-button" viewBox="0 0 70 70" xmlns="http://www.w3.org/2000/svg">
+    <rect fill="#007f00" x="20" y="10" width="30" height="30"></rect>
+    <rect fill="#ffff00" x="30" y="20" width="30" height="30"></rect>
+    <rect fill="#007fff" x="10" y="30" width="30" height="30"></rect>
+</svg>
