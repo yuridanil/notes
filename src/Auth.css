@@ -1,0 +1,126 @@
+.auth {
+    position: fixed;
+    top: 0;
+    right: 0;
+    margin: 8px;
+    z-index: 1000;
+    background-color: #ffffff;
+    cursor: default;
+    border-radius: 1px;
+}
+
+.auth-bar {
+    padding: 2px 4px 2px 4px;
+}
+
+.auth-form {
+    display: flex;
+    flex-direction: column;
+    min-width: 200px;
+    min-height: 150px;
+    gap: 8px;
+    padding: 4px 8px 6px 8px;
+    box-shadow: 1px 1px 4px 0px #aaaaaa;
+}
+
+.form-header {
+    display: flex;
+    justify-content: right;
+    z-index: 10;
+}
+
+.pointer {
+    cursor: pointer;
+}
+
+.form-input {
+    display: flex;
+    background-position: center;
+    background-repeat: no-repeat;
+    font-family: inherit;
+    outline: none;
+    border: 1px solid #000000;
+    padding: 4px;
+}
+
+.flexrow {
+    display: flex;
+    flex-direction: row;
+    gap: 4px;
+    justify-content: space-between;
+    align-items: center;
+}
+
+.flexcolumn {
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+    justify-content: space-evenly;
+    align-items: center;
+}
+
+.spinner {
+    width: 24px;
+    height: 24px;
+    -webkit-animation: spin 1s linear infinite;
+    -moz-animation: spin 1s linear infinite;
+    animation: spin 1s linear infinite;
+    background-position: center;
+    background-repeat: no-repeat;
+}
+
+.spinner-wrapper {
+    position: absolute;
+    display: flex;
+    left: 0;
+    right: 0;
+    top: 0;
+    bottom: 0;
+    justify-content: center;
+    align-items: center;
+    background-color: rgba(255, 255, 255, 0.85);
+}
+
+@-moz-keyframes spin {
+    100% {
+        -moz-transform: rotate(3 60deg);
+    }
+}
+
+@-webkit-keyframes spin {
+    100% {
+        -webkit-transform: rotate(360deg);
+    }
+}
+
+@keyframes spin {
+    100% {
+        -webkit-transform: rotate(360deg);
+        transform: rotate(360deg);
+    }
+}
+
+.captcha,
+.captcha-input {
+    display: flex;
+    border: 1px solid #000000;
+    outline: none;
+    width: 84px;
+    height: 24px;
+    padding: 0;
+}
+
+.captcha-input {
+    padding: 0px 4px 0px 4px;
+}
+
+.reload {
+    width: 24px;
+    height: 24px;
+    background-position: center;
+    background-repeat: no-repeat;
+}
+
+input {
+    cursor: text;
+}

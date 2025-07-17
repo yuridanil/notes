@@ -1,4 +1,5 @@
 export const COLORS = [
+    '#fefefe',
     '#ffffee',
     '#eeffee',
     '#eeffff',
@@ -6,7 +7,6 @@ export const COLORS = [
     '#eeeeff',
     '#ffeeff',
     '#eeeeee',
-    '#fefefe',
 ];
 
 export const GRID_SIZE = 25;
@@ -19,3 +19,5 @@ export const MIN_FONT_SIZE = 6;
 export const MAX_FONT_SIZE = 30;
 export const FONT_SIZE_STEP = 1;
 export const MOVE_TRANSPARENCY = 0.7;
+
+export const EMAIL_REGEX = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;

@@ -3,80 +3,108 @@ import { Rnd } from 'react-rnd';
 import { useState, useEffect, useRef } from 'react';
 import * as Const from './Constants';
 import { Lang } from './Lang';
+import Auth from './Auth.js';
 
 function Notes() {
-  const [notes, setNotes] = useState(JSON.parse(localStorage.getItem('notes') || '[]'));
+  const [notes, setNotes] = useState([]);
   const [dragId, setDragId] = useState(-1);
   const [transparentId, setTransparentId] = useState(-1);
   const [dropId, setDropId] = useState(-1);
   const [status, setStatus] = useState(0);
-  const [saved, setSaved] = useState(localStorage.getItem('saved') || true);
+  const [saved, setSaved] = useState(JSON.parse(localStorage.getItem('saved') || 'true'));
+  const [session_id, setSessionId] = useState(localStorage.getItem('session_id') || "");
   const saveTimeout = useRef(null);
   const touchTimeout = useRef(null);
   const touchStartTime = useRef(null);
 
   useEffect(() => {
-    loadNotes();
+    if (session_id && saved)
+      loadNotes(session_id);
+    else
+      setNotes(JSON.parse(localStorage.getItem('notes')));
+    const handleKeyDown = (e) => {
+      if (e.ctrlKey && e.code === 'KeyS') {
+        e.stopPropagation();
+        e.preventDefault();
+        clearTimeout(saveTimeout.current);
+        if (session_id) // save to DB if authorized
+          saveNotes();
+      }
+    };
+    window.addEventListener('keydown', handleKeyDown);
+    return () => {
+      window.removeEventListener('keydown', handleKeyDown);
+    };
   }, []);
+
+  useEffect(() => {
+    localStorage.setItem('session_id', session_id);
+  }, [session_id]);
+
+  useEffect(() => {
+    localStorage.setItem('notes', JSON.stringify(notes));
+  }, [notes]);
 
   useEffect(() => {
     localStorage.setItem('saved', saved);
   }, [saved]);
 
-  useEffect((e) => {
-    localStorage.setItem('notes', JSON.stringify(notes));
+  function delayedSave() {
+    setSaved(false);
     clearTimeout(saveTimeout.current);
-    setStatus(1);
-    saveTimeout.current = setTimeout(() => {
-      saveNotes();
-    }, Const.SAVE_TIMEOUT);
-  }, [notes]);
-
-  function loadNotes() {
-    setStatus(2);
-    if (localStorage.getItem('saved') === 'true') {
-      fetch('http://localhost:5000/api/load', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json'
-        },
-        body: '{"user_id":1}'
-      })
-        .then(response => response.json())
-        .then(data => {
-          if (data.result === 'ok') {
-            setNotes(data.items);
-            setStatus(0);
-          }
-          else
-            setStatus(3);
-        })
-        .catch(error => {
-          setStatus(3);
-        });
-    } else {
-      setNotes(JSON.parse(localStorage.getItem('notes')));
+    if (session_id) { // save to DB if authorized
+      saveTimeout.current = setTimeout(() => {
+        saveNotes();
+      }, Const.SAVE_TIMEOUT);
     }
   }
 
+  function loadNotes(session_id) {
+    console.log('{load}');
+    fetch('http://localhost:5000/api/load', {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json'
+      },
+      body: JSON.stringify({ "session_id": session_id })
+    })
+      .then(response => response.json())
+      .then(data => {
+        console.log(data.message);
+        if (data.message === 'ok') {
+          setNotes(data.items);
+          setSaved(true);
+        }
+        else {
+          console.log('!ok');
+          setStatus(3);
+        }
+      })
+      .catch(error => {
+        console.log('err');
+        setStatus(3);
+      });
+  }
+
   function saveNotes() {
-    // return;
+    console.log('{save}');
     setStatus(2);
     fetch('http://localhost:5000/api/save', {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json'
       },
-      body: JSON.stringify({ user_id: 1, notes: JSON.parse(localStorage.getItem('notes')) })
+      body: JSON.stringify({ session_id: session_id, notes: JSON.parse(localStorage.getItem('notes')) })
     })
       .then(response => response.json())
       .then(data => {
-        if (data.result === 'ok') {
+        if (data.message === 'ok') {
           setStatus(0);
           setSaved(true);
         }
-        else {
+        else if (data.message === 'unauthorized') {
           setStatus(3);
+          setSessionId("");
         }
       })
       .catch(error => {
@@ -103,36 +131,41 @@ function Notes() {
         "x": Math.trunc(((e._reactName === 'onDoubleClick' ? e.clientX : e.changedTouches[0].clientX) + e.target.scrollLeft) / Const.GRID_SIZE) * Const.GRID_SIZE,
         "y": Math.trunc(((e._reactName === 'onDoubleClick' ? e.clientY : e.changedTouches[0].clientY) + e.target.scrollTop) / Const.GRID_SIZE) * Const.GRID_SIZE
       },
-      "size": { "width": Const.GRID_SIZE * Const.DEFAULT_NOTE_WIDTH_SCALE, "height": Const.GRID_SIZE * Const.DEFAULT_NOTE_HEIGHT_SCALE },
+      "size": { "w": Const.GRID_SIZE * Const.DEFAULT_NOTE_WIDTH_SCALE, "h": Const.GRID_SIZE * Const.DEFAULT_NOTE_HEIGHT_SCALE },
       "color": Const.COLORS[colorIndex],
       "content": "",
       "fontsize": Const.DEFAULT_FONT_SIZE
     }]);
+    delayedSave();
   }
 
   function dropNote(id) {
     setNotes(notes.filter(e => e.id !== id));
     setDropId(-1);
+    delayedSave();
   }
 
   function beforeDropNote(id) {
-    setTopId(id);
+    setTopNote(id);
     setDropId(id);
   }
 
-  function setTopId(id) {
+  function setTopNote(id) {
     let itemZindex = notes.find(e => e.id === id).zindex;
-    setNotes(notes.map((e) => {
-      if (e.id === id)
-        e.zindex = notes.length - 1;
-      else if (e.zindex > itemZindex)
-        e.zindex = e.zindex - 1;
-      return e;
-    }));
+    if (itemZindex !== notes.length - 1) { // To avoid save on only focus on top note
+      setNotes(notes.map((e) => {
+        if (e.id === id)
+          e.zindex = notes.length - 1;
+        else if (e.zindex > itemZindex)
+          e.zindex = e.zindex - 1;
+        return e;
+      }));
+      delayedSave();
+    }
   }
 
   function moveStart(id) {
-    setTopId(id);
+    setTopNote(id);
     setDragId(id);
   };
 
@@ -142,11 +175,11 @@ function Notes() {
       setNotes(notes.map((item) => {
         if (item.id === dragId) {
           item.position = { x: Math.max(x, 0), y: Math.max(y, 0) };
-          item.size = { width: parseInt(w || item.size.width), height: parseInt(h || item.size.height) };
+          item.size = { w: parseInt(w || item.size.w), h: parseInt(h || item.size.h) };
         }
         return item;
       }));
-      setSaved(false);
+      delayedSave();
     }
   }
 
@@ -157,17 +190,17 @@ function Notes() {
 
   const handleTextareaChange = (id, newContent) => {
     setNotes(notes.map(item => item.id === id ? { ...item, content: newContent } : item));
-    setSaved(false);
+    delayedSave();
   };
 
   function incFontClick(id) {
     setNotes(notes.map(item => item.id === id ? { ...item, fontsize: Math.min(item.fontsize + Const.FONT_SIZE_STEP, Const.MAX_FONT_SIZE) } : item));
-    setSaved(false);
+    delayedSave();
   }
 
   function decFontClick(id) {
     setNotes(notes.map(item => item.id === id ? { ...item, fontsize: Math.max(item.fontsize - Const.FONT_SIZE_STEP, Const.MIN_FONT_SIZE) } : item));
-    setSaved(false);
+    delayedSave();
   }
 
   return (
@@ -183,69 +216,76 @@ function Notes() {
         e.preventDefault();
       }}
     >
-      {notes.map((e, i) => {
-        let newStyle = {
-          zIndex: e.zindex,
-          opacity: transparentId === e.id ? Const.MOVE_TRANSPARENCY : 1,
-          display: "flex",
-          flexDirection: "column",
-          flexWrap: "wrap",
-          alignItems: "flex-start"
-        }
-        return <Rnd
-          className='note'
-          id={e.id}
-          key={e.id}
-          style={newStyle}
-          enableResizing={{ top: true, right: true, bottom: true, left: true, topRight: true, bottomRight: true, bottomLeft: true, topLeft: true }}
-          onDragStart={() => moveStart(e.id)}
-          onDrag={(event, d) => move(d.x, d.y)}
-          onDragStop={() => moveStop()}
-          onResizeStart={() => moveStart(e.id)}
-          onResize={(event, direction, ref, delta, position) => { move(position.x, position.y, ref.style.width, ref.style.height) }}
-          onResizeStop={() => moveStop()}
-          onDoubleClick={e => e.stopPropagation()}
-          onTouchStart={e => e.stopPropagation()}
-          onTouchEnd={e => e.stopPropagation()}
-          position={e.position}
-          size={e.size}
-          dragGrid={[Const.GRID_SIZE, Const.GRID_SIZE]}
-          resizeGrid={[Const.GRID_SIZE, Const.GRID_SIZE]}
-          minWidth={Const.GRID_SIZE * 5}
-          minHeight={Const.GRID_SIZE * 5}
-          resizeHandleClasses={{ left: "horizHandleClass", right: "horizHandleClass", top: "vertHandleClass", bottom: "vertHandleClass" }}
-        >
-          <div className='toolbar'
-            onMouseDown={e => { e.stopPropagation(); }}
-            onTouchStart={e => { e.stopPropagation(); }}>
-            <div className="tool-button icon-minus" onClick={() => decFontClick(e.id)} onTouchStart={() => decFontClick(e.id)} />
-            <div className="tool-button icon-plus" onClick={() => incFontClick(e.id)} onTouchStart={() => incFontClick(e.id)} />
-            <div className="tool-button icon-close" onClick={() => beforeDropNote(e.id)} onTouchStart={() => beforeDropNote(e.id)} />
-          </div>
-          <textarea className='note-text'
-            autoFocus={e.zindex === notes.length - 1}
+      {notes && notes.length === 0 &&
+        <span className='gray'>{(navigator.maxTouchPoints > 0 ? Lang.longtouch : Lang.doubleclick)}</span>
+      }
+      {notes && notes.length > 0 &&
+        notes.map((e, i) => {
+          let newStyle = {
+            zIndex: e.zindex,
+            opacity: transparentId === e.id ? Const.MOVE_TRANSPARENCY : 1,
+            display: "flex",
+            flexDirection: "column",
+            flexWrap: "wrap",
+            alignItems: "flex-start"
+          }
+          return <Rnd
+            className='note'
             id={e.id}
             key={e.id}
-            value={e.content}
-            onChange={(event) => handleTextareaChange(e.id, event.target.value)}
-            onScroll={() => setDragId(-1)}
-            style={{ backgroundColor: e.color, borderColor: e.color, fontSize: (e.fontsize || 1.2) + "pt" }}
-            placeholder={Lang.placeholder}
+            style={newStyle}
+            enableResizing={{ top: true, right: true, bottom: true, left: true, topRight: true, bottomRight: true, bottomLeft: true, topLeft: true }}
+            onDragStart={() => moveStart(e.id)}
+            onDrag={(event, d) => move(d.x, d.y)}
+            onDragStop={() => moveStop()}
+            onResizeStart={() => moveStart(e.id)}
+            onResize={(event, direction, ref, delta, position) => { move(position.x, position.y, ref.style.width, ref.style.height) }}
+            onResizeStop={() => moveStop()}
+            onDoubleClick={e => e.stopPropagation()}
+            onTouchStart={e => e.stopPropagation()}
+            onTouchEnd={e => e.stopPropagation()}
+            position={e.position}
+            size={{ width: e.size.w, height: e.size.h }}
+            dragGrid={[Const.GRID_SIZE, Const.GRID_SIZE]}
+            resizeGrid={[Const.GRID_SIZE, Const.GRID_SIZE]}
+            minWidth={Const.GRID_SIZE * 5}
+            minHeight={Const.GRID_SIZE * 5}
+            resizeHandleClasses={{ left: "horizHandleClass", right: "horizHandleClass", top: "vertHandleClass", bottom: "vertHandleClass" }}
           >
-          </textarea>
-          {e.id === dropId &&
-            <div className='dialog'>
-              <div className='dialog-button' onMouseDown={e => e.stopPropagation()} onClick={() => dropNote(e.id)} onTouchStart={() => dropNote(e.id)}>{Lang.delete}</div>
-              <div className='dialog-button' onMouseDown={e => e.stopPropagation()} onClick={() => setDropId(-1)} onTouchStart={() => setDropId(-1)}>{Lang.cancel}</div>
+            <div className='toolbar'
+              onMouseDown={e => { e.stopPropagation(); }}
+              onTouchStart={e => { e.stopPropagation(); }}>
+              <div className="tool-button s14 icon-minus" onClick={() => decFontClick(e.id)} onTouchStart={() => decFontClick(e.id)} />
+              <div className="tool-button s14 icon-plus" onClick={() => incFontClick(e.id)} onTouchStart={() => incFontClick(e.id)} />
+              <div className="tool-button s14 icon-close" onClick={() => beforeDropNote(e.id)} onTouchStart={() => beforeDropNote(e.id)} />
             </div>
-          }
-        </Rnd>
-      })}
-      {<div className='status' style={{ color: status === 3 ? 'red' : 'gray' }}>{status === 0 && ""}{status === 1 && "•"}{[2, 3].includes(status) && "⬤"}</div>}
-      <div className='copyright'>Notes © 2025 Yuri Danilov</div>
+
+            <textarea className='note-text'
+              contentEditable={true}
+              autoFocus={e.zindex === notes.length - 1}
+              id={e.id}
+              key={e.id}
+              value={e.content}
+              onChange={(event) => handleTextareaChange(e.id, event.target.value)}
+              onScroll={() => setDragId(-1)}
+              style={{ backgroundColor: e.color, borderColor: e.color, fontSize: (e.fontsize || 1.2) + "pt" }}
+              placeholder={Lang.placeholder}
+            >
+            </textarea>
+
+            {e.id === dropId &&
+              <div className='dialog'>
+                <div className='dialog-button' onMouseDown={e => e.stopPropagation()} onClick={() => dropNote(e.id)} onTouchStart={() => dropNote(e.id)}>{Lang.delete}</div>
+                <div className='dialog-button' onMouseDown={e => e.stopPropagation()} onClick={() => setDropId(-1)} onTouchStart={() => setDropId(-1)}>{Lang.cancel}</div>
+              </div>
+            }
+          </Rnd>
+        })}
+      {<div className='status s24' style={{ color: status === 3 ? 'red' : 'gray' }}>{status === 0 && ""}{status === 1 && "•"}{[2, 3].includes(status) && "⬤"}</div>}
+      <Auth session_id={session_id} setSessionId={setSessionId} notes={notes} setNotes={setNotes} loadNotes={loadNotes} setSaved={setSaved} />
+      <div className='copyright gray'>Notes © 2025 Yuri Danilov</div>
     </div>
   );
-
 }
 
 export default Notes;

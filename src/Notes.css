@@ -1,12 +1,16 @@
 .notes {
-    opacity: 1.0;
+    display:flex;
+    opacity: 0.1;
     position: absolute;
     width: 100%;
     height: 100%;
     overflow: auto;
     user-select: none;
-    font-family: "Comic Sans MS", "Comic Sans", cursive;
+    /* font-family: "Comic Sans MS", "Comic Sans", cursive; */
+    font-family: 'Gill Sans', 'Gill Sans MT', Calibri, 'Trebuchet MS', sans-serif;
     font-size: 12pt;
+    justify-content: center;
+    align-items: center;
 }
 
 .note {
@@ -37,6 +41,8 @@
     cursor: default;
     user-select: all;
     font-family: inherit;
+    border-radius: 1px;
+    overflow: auto;
 }
 
 .note-text:focus {
@@ -76,9 +82,9 @@
 
 .tool-button {
     display: flex;
-    width: 14px;
-    height: 14px;
     cursor: default;
+    background-position: center;
+    background-repeat: no-repeat;
 }
 
 .dialog {
@@ -117,17 +123,13 @@
     bottom: 4px;
     transform: translate(-50%, 0);
     margin: 0;
-    padding: 0;
+    padding: 0px 4px 0px 4px;
     z-index: 1000;
     white-space: nowrap;
-    opacity: 1.0;
+    opacity: 0.8;
     pointer-events: none;
-    text-shadow:
-        0px 0px 1px #ffffff,
-        1px 1px 1px #ffffff,
-        -1px 1px 1px #ffffff,
-        1px -1px 1px #ffffff,
-        -1px -1px 1px #ffffff;
+    background-color: #ffffff;
+    border-radius: 1px;
 }
 
 .status {
@@ -137,20 +139,7 @@
     justify-content: center;
     pointer-events: none;
     right: 8px;
-    top: 8px;
-    width: 24px;
-    height: 24px;
+    bottom: 8px;
     z-index: 1000;
 }
 
-.icon-close {
-    background-image: url("data:image/svg+xml;utf8,<svg class='svg-button' viewBox='0 0 64 64' xmlns='http://www.w3.org/2000/svg'> <path stroke='%23aaaaaa' stroke-width='16' stroke-linecap='round' d='M8 8 l48 48 M56 8 l-48 48'></path></svg>");
-}
-
-.icon-plus {
-    background-image: url("data:image/svg+xml;utf8,<svg class='svg-button' viewBox='0 0 64 64' xmlns='http://www.w3.org/2000/svg'> <path stroke='%23aaaaaa' stroke-width='16' stroke-linecap='round' d='M32 8 l0 48 M8 32 l48 0'></path></svg>");
-}
-
-.icon-minus {
-    background-image: url("data:image/svg+xml;utf8,<svg class='svg-button' viewBox='0 0 64 64' xmlns='http://www.w3.org/2000/svg'> <path stroke='%23aaaaaa' stroke-width='16' stroke-linecap='round' d='M8 32 l48 0'></path></svg>");
-}
