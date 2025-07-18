@@ -105,7 +105,7 @@ function Auth({ session_id, setSessionId, notes, setNotes, loadNotes, setSaved }
 
     return (
         <div className='auth' onDoubleClick={e => e.stopPropagation()}>
-            {session_id === "" &&
+            {session_id === "" ?
                 <>
                     {
                         showForm ?
@@ -130,12 +130,14 @@ function Auth({ session_id, setSessionId, notes, setNotes, loadNotes, setSaved }
                                 {message && <div className='red'>{message}</div>}
                             </form>
                             :
-                            <div className="auth-bar" ><span className='gray'>{Lang.authhint},&nbsp;</span><span className='black pointer' onClick={() => { setShowForm(true); setMessage(""); }}>{Lang.authorize}</span></div>
+                            <div className="auth-bar" >
+                                <span className='gray'>{Lang.authhint},&nbsp;</span>
+                                <span className='black pointer' onClick={() => { setShowForm(true); setMessage(""); }} onTouchStart={() => { setShowForm(true); setMessage(""); }}>{Lang.authorize}</span>
+                            </div>
                     }
                 </>
-            }
-            {session_id !== "" &&
-                <div className="auth-bar"><span className='gray'>{inputEmail}&nbsp;</span><span className='black pointer' onClick={logout}>{Lang.signout}</span></div>
+                :
+                <div className="auth-bar"><span className='gray'>{inputEmail}&nbsp;</span><span className='black pointer' onClick={logout} onTouchStart={logout}>{Lang.signout}</span></div>
             }
         </div>
     );

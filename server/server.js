@@ -14,7 +14,7 @@ app.use(cors());
 app.use(express.json());
 
 app.post('/api/load', async (req, res) => {
-    console.log('{load}');
+    // console.log('{load}');
     let sql = '', message, status, user_id, result;
     try {
         sql = `UPDATE ${schema}.users SET expiration = current_timestamp + interval '${EXPIRATION_INTERVAL}' WHERE session_id = $1 and current_timestamp < expiration RETURNING id`;
@@ -30,16 +30,15 @@ app.post('/api/load', async (req, res) => {
             message = "ok";
         }
     } catch (err) {
+        console.log(err);
         status = 500;
         message = "unknownerror";
-        console.log(err);
     }
     res.status(status).json({ message: message, items: result.rowCount > 0 ? result.rows : [] });
 });
 
 app.post('/api/save', async (req, res) => {
-    console.log('{save}');
-    // console.log(JSON.stringify(req.body));
+    // console.log('{save}');
     let sql = '', message, status, user_id;
     try {
         sql = `UPDATE ${schema}.users SET expiration = current_timestamp + interval '${EXPIRATION_INTERVAL}' WHERE session_id = $1 and current_timestamp < expiration RETURNING id`;
@@ -60,15 +59,15 @@ app.post('/api/save', async (req, res) => {
             message = "ok";
         }
     } catch (err) {
+        console.log(err);
         status = 500;
         message = "unknownerror";
-        console.log(err);
     }
     res.status(status).json({ message: message });
 });
 
 app.post('/api/login', async (req, res) => {
-    console.log('{login}');
+    // console.log('{login}');
     let result, message, session_id = "", notes = [];
     if (!EMAIL_REGEX.test(req.body.email)) { // check email format
         message = 'wrongemail';
@@ -77,12 +76,11 @@ app.post('/api/login', async (req, res) => {
     } else {
         try {
             let sql;
-            /*
             sql = `DELETE FROM ${schema}.captcha WHERE id = $1 AND val = $2 AND current_timestamp < expiration`;
-            const result = await pool.query(sql, [req.body.captcha_id, String(req.body.captcha_value)]);
+            let result = await pool.query(sql, [req.body.captcha_id, String(req.body.captcha_value)]);
             if (result.rowCount === 0) {
                 message = 'captchaerror';
-            } else */{
+            } else {
                 if (req.body.mode === 'signup') // signup new user
                     sql = `INSERT INTO ${schema}.users (email, password, registration, session_id, expiration, confirmation_id) VALUES ($1, md5($2), current_timestamp, md5(random()::text), current_timestamp + interval '${EXPIRATION_INTERVAL}', md5(random()::text)) RETURNING id, email, session_id`;
                 else if (req.body.mode === 'signin') // signup new user
@@ -112,13 +110,13 @@ app.post('/api/login', async (req, res) => {
             }
         }
     }
-    setTimeout(e => {
+    setTimeout(() => {
         res.status(200).json({ message: message, email: req.body.email, session_id: session_id });
-    }, 100);
+    }, 300);
 });
 
 app.post('/api/verify', async (req, res) => {
-    console.log('{verify}');
+    // console.log('{verify}');
     res.status(200).json({ message: "notimplemented" });
 });
 
@@ -153,7 +151,7 @@ function genCaptcha(number) {
 }
 
 app.get('/api/captcha', async (req, res) => {
-    console.log('{captcha}');
+    // console.log('{captcha}');
     let num = Math.trunc(1e4 + Math.random() * 9e4);
     let id;
     try {
@@ -168,8 +166,10 @@ app.get('/api/captcha', async (req, res) => {
     }
     setTimeout(() => {
         res.status(200).json({ message: message, id: id, image: genCaptcha(num) });
-    }, 500);
+    }, 200);
 });
+
+app.use(express.static('build'));
 
 app.listen(port, () => {
     console.log(`Backend server listening at http://localhost:${port}`);

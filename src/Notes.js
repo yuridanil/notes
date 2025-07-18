@@ -6,7 +6,7 @@ import { Lang } from './Lang';
 import Auth from './Auth.js';
 
 function Notes() {
-  const [notes, setNotes] = useState([]);
+  const [notes, setNotes] = useState(JSON.parse(localStorage.getItem('notes') || '[]'));
   const [dragId, setDragId] = useState(-1);
   const [transparentId, setTransparentId] = useState(-1);
   const [dropId, setDropId] = useState(-1);
@@ -20,8 +20,8 @@ function Notes() {
   useEffect(() => {
     if (session_id && saved)
       loadNotes(session_id);
-    else
-      setNotes(JSON.parse(localStorage.getItem('notes')));
+    // else
+    //   setNotes(JSON.parse(localStorage.getItem('notes')));
     const handleKeyDown = (e) => {
       if (e.ctrlKey && e.code === 'KeyS') {
         e.stopPropagation();
@@ -60,7 +60,7 @@ function Notes() {
   }
 
   function loadNotes(session_id) {
-    console.log('{load}');
+    // console.log('{load}');
     fetch('http://localhost:5000/api/load', {
       method: 'POST',
       headers: {
@@ -70,24 +70,22 @@ function Notes() {
     })
       .then(response => response.json())
       .then(data => {
-        console.log(data.message);
         if (data.message === 'ok') {
           setNotes(data.items);
           setSaved(true);
         }
-        else {
-          console.log('!ok');
-          setStatus(3);
+        else if (data.message === 'unauthorized') {
+          setSessionId("");
         }
       })
       .catch(error => {
-        console.log('err');
+        console.err('err');
         setStatus(3);
       });
   }
 
   function saveNotes() {
-    console.log('{save}');
+    // console.log('{save}');
     setStatus(2);
     fetch('http://localhost:5000/api/save', {
       method: 'POST',
@@ -108,6 +106,7 @@ function Notes() {
         }
       })
       .catch(error => {
+        console.err('err');
         setStatus(3);
       });
   }

@@ -16,7 +16,7 @@ export const SAVE_TIMEOUT = 3000;
 export const TOUCH_TIMEOUT = 500;
 export const DEFAULT_FONT_SIZE = 16;
 export const MIN_FONT_SIZE = 6;
-export const MAX_FONT_SIZE = 30;
+export const MAX_FONT_SIZE = 100;
 export const FONT_SIZE_STEP = 1;
 export const MOVE_TRANSPARENCY = 0.7;
 
