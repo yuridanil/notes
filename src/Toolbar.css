@@ -1,0 +1,25 @@
+.toolbar {
+    position: absolute;
+    display: flex;
+    flex-direction: row;
+    gap: 4px;
+    top: 0;
+    left: 0;
+    right: 0;
+    margin: 8px;
+    z-index: 5;
+    cursor: default;
+}
+
+.tool-button {
+    display: flex;
+    cursor: default;
+    background-position: center;
+    background-repeat: no-repeat;
+}
+
+.grow-left {
+    flex-grow: 1;
+    background-position: 8px;
+}
+

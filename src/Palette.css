@@ -1,0 +1,21 @@
+.palette {
+    position: absolute;
+    display: flex;
+    flex-wrap: wrap;
+    flex-direction: row;
+    margin: 4px;
+    padding: 0;
+    gap: 1px;
+    width: 168px;
+    height: 168px;
+    left: 4px;
+    top: 24px;
+    z-index: 20;
+    box-shadow: 1px 1px 4px 0px #aaaaaa;
+    background-color: #dddddd;
+    cursor: pointer;
+}
+
+.palette-cell {
+    flex: 30%;
+}

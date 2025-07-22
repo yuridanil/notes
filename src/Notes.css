@@ -1,5 +1,5 @@
 .notes {
-    display:flex;
+    display: flex;
     opacity: 1.0;
     position: absolute;
     width: 100%;
@@ -65,26 +65,6 @@
 ::-webkit-scrollbar-thumb {
     background: #aaaaaa;
     cursor: default;
-}
-
-.toolbar {
-    position: absolute;
-    display: flex;
-    flex-direction: row;
-    gap: 4px;
-    top: 0;
-    right: 0;
-    margin-right: 8px;
-    margin-top: 8px;
-    z-index: 10;
-    cursor: default;
-}
-
-.tool-button {
-    display: flex;
-    cursor: default;
-    background-position: center;
-    background-repeat: no-repeat;
 }
 
 .dialog {

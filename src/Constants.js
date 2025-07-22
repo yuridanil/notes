@@ -7,6 +7,7 @@ export const COLORS = [
     '#eeeeff',
     '#ffeeff',
     '#eeeeee',
+    '#fff3df',
 ];
 
 export const GRID_SIZE = 25;

@@ -4,6 +4,8 @@ import { useState, useEffect, useRef } from 'react';
 import * as Const from './Constants';
 import { Lang } from './Lang';
 import Auth from './Auth.js';
+import Palette from './Palette.js';
+import Toolbar from './Toolbar.js';
 
 function Notes() {
   const [notes, setNotes] = useState(JSON.parse(localStorage.getItem('notes') || '[]'));
@@ -16,6 +18,7 @@ function Notes() {
   const saveTimeout = useRef(null);
   const touchTimeout = useRef(null);
   const touchStartTime = useRef(null);
+  const [showPaletteId, setShowPaletteId] = useState(-1);
 
   useEffect(() => {
     if (session_id && saved)
@@ -79,7 +82,7 @@ function Notes() {
         }
       })
       .catch(error => {
-        console.err('err');
+        console.error('err');
         setStatus(3);
       });
   }
@@ -106,7 +109,7 @@ function Notes() {
         }
       })
       .catch(error => {
-        console.err('err');
+        console.error('err');
         setStatus(3);
       });
   }
@@ -202,6 +205,12 @@ function Notes() {
     delayedSave();
   }
 
+  function setColor(id, color) {
+    setNotes(notes.map(item => item.id === id ? { ...item, color: color } : item));
+    setShowPaletteId(-1);
+    delayedSave();
+  }
+
   return (
     <div className="notes"
       onDoubleClick={e => addNote(e)}
@@ -251,14 +260,19 @@ function Notes() {
             minHeight={Const.GRID_SIZE * 5}
             resizeHandleClasses={{ left: "horizHandleClass", right: "horizHandleClass", top: "vertHandleClass", bottom: "vertHandleClass" }}
           >
-            <div className='toolbar'
-              onMouseDown={e => { e.stopPropagation(); }}
-              onTouchStart={e => { e.stopPropagation(); }}>
-              <div className="tool-button s14 icon-minus" onClick={() => decFontClick(e.id)} onTouchStart={() => decFontClick(e.id)} />
-              <div className="tool-button s14 icon-plus" onClick={() => incFontClick(e.id)} onTouchStart={() => incFontClick(e.id)} />
-              <div className="tool-button s14 icon-close" onClick={() => beforeDropNote(e.id)} onTouchStart={() => beforeDropNote(e.id)} />
-            </div>
-
+            <Toolbar classes={[
+              's14 icon-color ',
+              's14 grow-left',
+              's14 icon-minus',
+              's14 icon-plus',
+              's14 icon-close',
+            ]} actions={[
+              () => { setShowPaletteId(e.id) },
+              () => { },
+              () => { decFontClick(e.id) },
+              () => { incFontClick(e.id) },
+              () => { beforeDropNote(e.id) },
+            ]} />
             <textarea className='note-text'
               contentEditable={true}
               autoFocus={e.zindex === notes.length - 1}
@@ -271,7 +285,7 @@ function Notes() {
               placeholder={Lang.placeholder}
             >
             </textarea>
-
+            {e.id === showPaletteId && <Palette x={0} y={0} index={e.id} onSelect={setColor} />}
             {e.id === dropId &&
               <div className='dialog'>
                 <div className='dialog-button' onMouseDown={e => e.stopPropagation()} onClick={() => dropNote(e.id)} onTouchStart={() => dropNote(e.id)}>{Lang.delete}</div>
