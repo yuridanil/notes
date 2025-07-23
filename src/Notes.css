@@ -118,7 +118,7 @@
     align-items: center;
     justify-content: center;
     pointer-events: none;
-    right: 8px;
-    bottom: 8px;
-    z-index: 1000;
+    margin: 8px;
+    left: 0;
+    top: 0;
 }

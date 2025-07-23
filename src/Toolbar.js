@@ -2,10 +2,7 @@ import './Toolbar.css';
 
 function Toolbar({ classes, actions }) {
     return (
-        <div className='toolbar'
-            onMouseDown={e => { e.stopPropagation(); }}
-            onTouchStart={e => { e.stopPropagation(); }}
-        >
+        <div className='toolbar'>
             {classes.map((e, i) => <div key={i} className={'tool-button ' + classes[i]} onClick={actions[i]} onTouchStart={actions[i]} />)}
         </div>
     );

@@ -113,14 +113,14 @@ function Auth({ session_id, setSessionId, notes, setNotes, loadNotes, setSaved }
                                 <div className='form-header'><div className='pointer' onClick={() => setShowForm(false)}>{Lang.x}</div></div>
                                 {showRequest &&
                                     <div className='spinner-wrapper'>
-                                        <div className="spinner icon-spinner" />
+                                        <div className="spinner icon-spinner s24" />
                                     </div>
                                 }
                                 <input name="email" className='form-input' type='text' placeholder={Lang.email} autoComplete='off' value={inputEmail} onChange={e => setInputEmail(e.target.value)} />
                                 <input name="password" className='form-input' type='password' placeholder={Lang.password} autoComplete='off' value={inputPassword} onChange={e => setInputPassword(e.target.value)} />
                                 <div className='flexrow'>
                                     <img alt='' className='captcha' src={image} />
-                                    {showCaptchaRequest ? <div className="spinner icon-spinner" /> : <div className="reload pointer icon-reload" onClick={e => loadCaptcha()} />}
+                                    {showCaptchaRequest ? <div className="spinner icon-spinner s24" /> : <div className="reload pointer icon-reload" onClick={e => loadCaptcha()} />}
                                     <input className='captcha-input' type='text' value={inputCaptcha} onChange={e => setInputCaptcha(e.target.value)} />
                                 </div>
                                 <div className='flexrow'>

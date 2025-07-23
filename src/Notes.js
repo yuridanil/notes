@@ -50,10 +50,13 @@ function Notes() {
 
   useEffect(() => {
     localStorage.setItem('saved', saved);
+    if (!saved)
+      setStatus(1);
   }, [saved]);
 
   function delayedSave() {
     setSaved(false);
+    setStatus(1);
     clearTimeout(saveTimeout.current);
     if (session_id) { // save to DB if authorized
       saveTimeout.current = setTimeout(() => {
@@ -205,6 +208,10 @@ function Notes() {
     delayedSave();
   }
 
+  function togglePalette(id) {
+    setShowPaletteId(showPaletteId === -1 ? id : -1);
+  }
+
   function setColor(id, color) {
     setNotes(notes.map(item => item.id === id ? { ...item, color: color } : item));
     setShowPaletteId(-1);
@@ -224,6 +231,15 @@ function Notes() {
         e.preventDefault();
       }}
     >
+      <div className='status'>
+        {{
+          '0': '',
+          '1': '', // <div className={"icon-edit s24"}></div>,
+          '2': <div className={"spinner icon-spinner s24"}></div>,
+          '3': <div className={"gray"}>{Lang.saveerror}</div>
+        }[status]
+        }
+      </div>
       {notes && notes.length === 0 &&
         <span className='gray'>{(navigator.maxTouchPoints > 0 ? Lang.longtouch : Lang.doubleclick)}</span>
       }
@@ -262,12 +278,12 @@ function Notes() {
           >
             <Toolbar classes={[
               's14 icon-color ',
-              's14 grow-left',
+              's14 grow',
               's14 icon-minus',
               's14 icon-plus',
               's14 icon-close',
             ]} actions={[
-              () => { setShowPaletteId(e.id) },
+              () => { togglePalette(e.id) },
               () => { },
               () => { decFontClick(e.id) },
               () => { incFontClick(e.id) },
@@ -294,7 +310,6 @@ function Notes() {
             }
           </Rnd>
         })}
-      {<div className='status s24' style={{ color: status === 3 ? 'red' : 'gray' }}>{status === 0 && ""}{status === 1 && "•"}{[2, 3].includes(status) && "⬤"}</div>}
       <Auth session_id={session_id} setSessionId={setSessionId} notes={notes} setNotes={setNotes} loadNotes={loadNotes} setSaved={setSaved} />
       <div className='copyright gray'>Notes © 2025 Yuri Danilov</div>
     </div>

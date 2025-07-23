@@ -63,7 +63,9 @@ app.post('/api/save', async (req, res) => {
         status = 500;
         message = "unknownerror";
     }
-    res.status(status).json({ message: message });
+    setTimeout(() => {
+        res.status(status).json({ message: message });
+    }, 1000);
 });
 
 app.post('/api/login', async (req, res) => {
