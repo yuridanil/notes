@@ -65,7 +65,7 @@ app.post('/api/save', async (req, res) => {
     }
     setTimeout(() => {
         res.status(status).json({ message: message });
-    }, 1000);
+    }, 100);
 });
 
 app.post('/api/login', async (req, res) => {
@@ -114,7 +114,7 @@ app.post('/api/login', async (req, res) => {
     }
     setTimeout(() => {
         res.status(200).json({ message: message, email: req.body.email, session_id: session_id });
-    }, 300);
+    }, 2000);
 });
 
 app.post('/api/verify', async (req, res) => {
@@ -168,7 +168,7 @@ app.get('/api/captcha', async (req, res) => {
     }
     setTimeout(() => {
         res.status(200).json({ message: message, id: id, image: genCaptcha(num) });
-    }, 200);
+    }, 2000);
 });
 
 app.use(express.static('build'));

@@ -6,7 +6,7 @@ import { useState, useEffect, useRef } from 'react';
 
 function Auth({ session_id, setSessionId, notes, setNotes, loadNotes, setSaved }) {
     const [showForm, setShowForm] = useState(false);
-    const [inputEmail, setInputEmail] = useState("a@a.a");
+    const [inputEmail, setInputEmail] = useState(localStorage.getItem("email") || "");
     const [inputPassword, setInputPassword] = useState("");
     const [inputCaptcha, setInputCaptcha] = useState("");
     const [message, setMessage] = useState(null);
@@ -59,7 +59,7 @@ function Auth({ session_id, setSessionId, notes, setNotes, loadNotes, setSaved }
     }
 
     function login(mode, user, pass) {
-        console.log('{login}' + mode);
+        // console.log('{login}' + mode);
         if (!EMAIL_REGEX.test(inputEmail)) { // check email format
             setMessage(Lang['wrongemail']);
         } else if (inputPassword.length < 6) { // check pass length
@@ -78,6 +78,7 @@ function Auth({ session_id, setSessionId, notes, setNotes, loadNotes, setSaved }
                 .then(data => {
                     setShowRequest(false);
                     if (data.message === 'ok') {
+                        localStorage.setItem("email", inputEmail);
                         setSessionId(data.session_id);
                         if (mode === 'signin')
                             loadNotes(data.session_id);
@@ -90,7 +91,7 @@ function Auth({ session_id, setSessionId, notes, setNotes, loadNotes, setSaved }
                 .catch(error => {
                     // console.log('error');
                     setShowRequest(false);
-                    console.log(error);
+                    // console.log(error);
                 });
         }
     }
@@ -115,12 +116,21 @@ function Auth({ session_id, setSessionId, notes, setNotes, loadNotes, setSaved }
                                         <div className="spinner icon-spinner s24" />
                                     </div>
                                 }
-                                <input name="email" className='form-input' type='text' placeholder={Lang.email} autoComplete='off' value={inputEmail} onChange={e => setInputEmail(e.target.value)} />
-                                <input name="password" className='form-input' type='password' placeholder={Lang.password} autoComplete='off' value={inputPassword} onChange={e => setInputPassword(e.target.value)} />
+                                <input name="email" className='form-input' type='text' placeholder={Lang.email} autoComplete='off' value={inputEmail}
+                                    onChange={e => setInputEmail(e.target.value)}
+                                    onKeyDown={(e) => { if (e.key === "Enter") document.querySelector('input[name="password"]').focus(); }}
+                                />
+                                <input name="password" className='form-input' type='password' placeholder={Lang.password} autoComplete='off' value={inputPassword}
+                                    onChange={e => setInputPassword(e.target.value)}
+                                    onKeyDown={(e) => { if (e.key === "Enter") document.querySelector('input[name="captcha"]').focus(); }}
+                                />
                                 <div className='flexrow'>
                                     <img alt='' className='captcha' src={image} />
                                     {showCaptchaRequest ? <div className="spinner icon-spinner s24" /> : <div className="reload pointer icon-reload" onClick={e => loadCaptcha()} />}
-                                    <input className='captcha-input' type='text' value={inputCaptcha} onChange={e => setInputCaptcha(e.target.value)} />
+                                    <input name="captcha" className='captcha-input' type='text' value={inputCaptcha}
+                                        onChange={e => setInputCaptcha(e.target.value)}
+                                        onKeyDown={(e) => { if (e.key === "Enter") login('signin', inputEmail, inputPassword); }}
+                                    />
                                 </div>
                                 <div className='flexrow'>
                                     <div className='pointer' onClick={() => login('signin', inputEmail, inputPassword)}>{Lang.signin}</div>
