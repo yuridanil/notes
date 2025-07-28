@@ -7,7 +7,7 @@ import { useState, useEffect, useRef } from 'react';
 function Auth({ session_id, setSessionId, notes, setNotes, loadNotes, setSaved }) {
     const [showForm, setShowForm] = useState(false);
     const [inputEmail, setInputEmail] = useState("a@a.a");
-    const [inputPassword, setInputPassword] = useState("User123!");
+    const [inputPassword, setInputPassword] = useState("");
     const [inputCaptcha, setInputCaptcha] = useState("");
     const [message, setMessage] = useState(null);
     const [showRequest, setShowRequest] = useState(false);
@@ -35,7 +35,7 @@ function Auth({ session_id, setSessionId, notes, setNotes, loadNotes, setSaved }
     function loadCaptcha() {
         setImage("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg'></svg>");
         setShowCaptchaRequest(true);
-        fetch('http://localhost:5000/api/captcha', {
+        fetch('/api/captcha', {
             method: 'GET',
             headers: {
                 'Content-Type': 'application/json'
@@ -67,7 +67,7 @@ function Auth({ session_id, setSessionId, notes, setNotes, loadNotes, setSaved }
         } else {
             setMessage("");
             setShowRequest(true);
-            fetch('http://localhost:5000/api/login', {
+            fetch('/api/login', {
                 method: 'POST',
                 headers: {
                     'Content-Type': 'application/json'

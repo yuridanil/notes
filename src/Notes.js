@@ -79,7 +79,7 @@ function Notes() {
 
   function loadNotes(session_id) {
     // console.log('{load}');
-    fetch('http://localhost:5000/api/load', {
+    fetch('/api/load', {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json'
@@ -105,7 +105,7 @@ function Notes() {
   function saveNotes() {
     // console.log('{save}');
     setStatus(2);
-    fetch('http://localhost:5000/api/save', {
+    fetch('/api/save', {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json'
