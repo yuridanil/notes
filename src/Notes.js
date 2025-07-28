@@ -5,6 +5,7 @@ import * as Const from './Constants';
 import { Lang } from './Lang';
 import Auth from './Auth.js';
 import Palette from './Palette.js';
+import FontBox from './FontBox.js';
 import Toolbar from './Toolbar.js';
 
 function Notes() {
@@ -16,9 +17,11 @@ function Notes() {
   const [saved, setSaved] = useState(JSON.parse(localStorage.getItem('saved') || 'true'));
   const [session_id, setSessionId] = useState(localStorage.getItem('session_id') || "");
   const saveTimeout = useRef(null);
+  const saveInterval = useRef(null);
   const touchTimeout = useRef(null);
   const touchStartTime = useRef(null);
   const [showPaletteId, setShowPaletteId] = useState(-1);
+  const [showFontBoxId, setShowFontBoxId] = useState(-1);
 
   useEffect(() => {
     if (session_id && saved)
@@ -35,8 +38,16 @@ function Notes() {
       }
     };
     window.addEventListener('keydown', handleKeyDown);
+
+    saveInterval.current = setInterval(() => {
+      if (session_id && !saved && !saveTimeout.current) {
+        saveNotes();
+      }
+    }, Const.SAVE_INTERVAL);
+
     return () => {
       window.removeEventListener('keydown', handleKeyDown);
+      clearInterval(saveInterval.current);
     };
   }, []);
 
@@ -61,6 +72,7 @@ function Notes() {
     if (session_id) { // save to DB if authorized
       saveTimeout.current = setTimeout(() => {
         saveNotes();
+        saveTimeout.current = null;
       }, Const.SAVE_TIMEOUT);
     }
   }
@@ -139,7 +151,7 @@ function Notes() {
       "size": { "w": Const.GRID_SIZE * Const.DEFAULT_NOTE_WIDTH_SCALE, "h": Const.GRID_SIZE * Const.DEFAULT_NOTE_HEIGHT_SCALE },
       "color": Const.COLORS[colorIndex],
       "content": "",
-      "fontsize": Const.DEFAULT_FONT_SIZE
+      "font": {"id": Const.DEFAULT_FONT_ID, "size": Const.DEFAULT_FONT_SIZE}
     }]);
     delayedSave();
   }
@@ -199,22 +211,34 @@ function Notes() {
   };
 
   function incFontClick(id) {
-    setNotes(notes.map(item => item.id === id ? { ...item, fontsize: Math.min(item.fontsize + Const.FONT_SIZE_STEP, Const.MAX_FONT_SIZE) } : item));
+    setNotes(notes.map(item => item.id === id ? { ...item, font: {id: item.font.id, size: Math.min(item.font.size + Const.FONT_SIZE_STEP, Const.MAX_FONT_SIZE) }} : item));
     delayedSave();
   }
 
   function decFontClick(id) {
-    setNotes(notes.map(item => item.id === id ? { ...item, fontsize: Math.max(item.fontsize - Const.FONT_SIZE_STEP, Const.MIN_FONT_SIZE) } : item));
+    setNotes(notes.map(item => item.id === id ? { ...item, font: {id: item.font.id, size: Math.max(item.font.size - Const.FONT_SIZE_STEP, Const.MIN_FONT_SIZE) }} : item));
     delayedSave();
   }
 
   function togglePalette(id) {
+    setShowFontBoxId(-1);
     setShowPaletteId(showPaletteId === -1 ? id : -1);
   }
 
   function setColor(id, color) {
     setNotes(notes.map(item => item.id === id ? { ...item, color: color } : item));
     setShowPaletteId(-1);
+    delayedSave();
+  }
+
+  function toggleFontBox(id) {
+    setShowPaletteId(-1);
+    setShowFontBoxId(showFontBoxId === -1 ? id : -1);
+  }
+
+  function setFontId(id, fontid) {
+    setNotes(notes.map(item => item.id === id ? { ...item, font: {id: fontid, size: item.font.size }} : item));
+    setShowFontBoxId(-1);
     delayedSave();
   }
 
@@ -277,13 +301,15 @@ function Notes() {
             resizeHandleClasses={{ left: "horizHandleClass", right: "horizHandleClass", top: "vertHandleClass", bottom: "vertHandleClass" }}
           >
             <Toolbar classes={[
-              's14 icon-color ',
+              's14 icon-color',
+              's14 icon-font',
               's14 grow',
               's14 icon-minus',
               's14 icon-plus',
               's14 icon-close',
             ]} actions={[
               () => { togglePalette(e.id) },
+              () => { toggleFontBox(e.id) },
               () => { },
               () => { decFontClick(e.id) },
               () => { incFontClick(e.id) },
@@ -297,11 +323,12 @@ function Notes() {
               value={e.content}
               onChange={(event) => handleTextareaChange(e.id, event.target.value)}
               onScroll={() => setDragId(-1)}
-              style={{ backgroundColor: e.color, borderColor: e.color, fontSize: (e.fontsize || 1.2) + "pt" }}
+              style={{ backgroundColor: e.color, borderColor: e.color, fontSize: (e.font.size || Const.DEFAULT_FONT_SIZE) + "pt", fontFamily: Const.FONTS[e.font.id || Const.DEFAULT_FONT_ID] }}
               placeholder={Lang.placeholder}
             >
             </textarea>
             {e.id === showPaletteId && <Palette x={0} y={0} index={e.id} onSelect={setColor} />}
+            {e.id === showFontBoxId && <FontBox x={0} y={0} index={e.id} onSelect={setFontId} />}
             {e.id === dropId &&
               <div className='dialog'>
                 <div className='dialog-button' onMouseDown={e => e.stopPropagation()} onClick={() => dropNote(e.id)} onTouchStart={() => dropNote(e.id)}>{Lang.delete}</div>

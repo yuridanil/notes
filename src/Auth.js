@@ -92,7 +92,6 @@ function Auth({ session_id, setSessionId, notes, setNotes, loadNotes, setSaved }
                     setShowRequest(false);
                     console.log(error);
                 });
-
         }
     }
 

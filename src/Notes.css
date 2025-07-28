@@ -40,7 +40,6 @@
     box-shadow: 1px 1px 4px 0px #aaaaaa;
     cursor: default;
     user-select: all;
-    font-family: inherit;
     border-radius: 1px;
     overflow: auto;
 }

@@ -24,7 +24,7 @@ app.post('/api/load', async (req, res) => {
             message = "unauthorized";
         } else {
             user_id = result.rows[0].id;
-            sql = `SELECT id, zindex, content, position, size, color, content, fontsize FROM ${schema}.notes WHERE user_id = $1 ORDER BY id`;
+            sql = `SELECT id, zindex, content, position, size, color, content, font FROM ${schema}.notes WHERE user_id = $1 ORDER BY id`;
             result = await pool.query(sql, [user_id]);
             status = 200;
             message = "ok";
@@ -50,10 +50,10 @@ app.post('/api/save', async (req, res) => {
             user_id = result.rows[0].id;
             sql = `delete from ${schema}.notes where user_id = $1 and id not in ( select id FROM json_populate_recordset(null::notes.notes, $2) )`;
             result = await pool.query(sql, [user_id, JSON.stringify(req.body.notes)]);
-            sql = `INSERT INTO ${schema}.notes (user_id, id, content, position, size, color, fontsize, zindex)
-                SELECT $1, id, content, position, size, color, fontsize, zindex
+            sql = `INSERT INTO ${schema}.notes (user_id, id, content, position, size, font, color, zindex)
+                SELECT $1, id, content, position, size, font, color, zindex
                 FROM json_populate_recordset(null::${schema}.notes, $2)
-                ON CONFLICT (user_id, id) do update set content = excluded.content, position = excluded.position, size = excluded.size, color = excluded.color, fontsize = excluded.fontsize, zindex = excluded.zindex`;
+                ON CONFLICT (user_id, id) do update set content = excluded.content, position = excluded.position, size = excluded.size, font = excluded.font, color = excluded.color, zindex = excluded.zindex`;
             result = await pool.query(sql, [user_id, JSON.stringify(req.body.notes)]);
             status = 200;
             message = "ok";
@@ -94,8 +94,8 @@ app.post('/api/login', async (req, res) => {
                     message = 'ok';
                     session_id = result.rows[0].session_id;
                     if (req.body.mode === 'signup' && req.body.notes.length > 0) {
-                        sql = `INSERT INTO ${schema}.notes (user_id, id, content, position, size, color, fontsize, zindex)
-                            SELECT $1, id, content, position, size, color, fontsize, zindex
+                        sql = `INSERT INTO ${schema}.notes (user_id, id, content, position, size, font, color, zindex)
+                            SELECT $1, id, content, position, size, font, color, zindex
                             FROM json_populate_recordset(null::${schema}.notes, $2)`;
                         result = await pool.query(sql, [result.rows[0].id, JSON.stringify(req.body.notes)]);
                     }

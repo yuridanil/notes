@@ -10,9 +10,10 @@
 		"content" text NULL,
 		"position" json NULL,
 		"size" json NULL,
+		"font" json NULL,
 		color varchar(64) NULL,
-		fontsize float4 NULL,
 		zindex int,
+		share_id varchar(255) DEFAULT gen_random_uuid(),
 		CONSTRAINT notes_user_id_id_pk PRIMARY KEY (user_id, id)
 	);
 
