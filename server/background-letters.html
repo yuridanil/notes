@@ -1,0 +1,60 @@
+<!DOCTYPE html>
+<html>
+
+<head>
+    <meta charset='utf-8'>
+    <meta http-equiv='X-UA-Compatible' content='IE=edge'>
+    <meta name='viewport' content='width=device-width, initial-scale=1'>
+    <style>
+        html {
+            user-select: none;
+        }
+
+        svg {
+            border: 1px solid black;
+            font-family: "Courier";
+            font-weight: "lighter";
+            fill: #eeeeee;
+            cursor: crosshair;
+        }
+    </style>
+    <script>
+        var svg;
+        const
+            w = 512,
+            h = 512;
+        window.onload = () => {
+            document.querySelector("#svg1").addEventListener("click", (e) => {
+                let text = document.createElementNS("http://www.w3.org/2000/svg", "text");
+                text.setAttribute("pointer-events", "none");
+                text.setAttribute("font-size", 15 + Math.floor(Math.random() * 50) + "pt");
+                text.setAttribute("x", e.offsetX);
+                text.setAttribute("y", e.offsetY);
+                text.setAttribute("text-anchor", "middle");
+                text.innerHTML = String.fromCharCode(65 + Math.floor(Math.random() * 26));
+                text.setAttribute("rotate", -180 + Math.floor(Math.random() * 360));
+                e.target.appendChild(text.cloneNode(true));
+            });
+
+        }
+
+        window.onkeypress = (e) => {
+            if (e.ctrlKey && e.code === "KeyZ") {
+                var svg = document.querySelector('#svg1');
+                svg.lastChild.remove();
+            }
+        }
+
+        window.onwheel = (e) => {
+            console.log(e);
+        }
+
+    </script>
+</head>
+
+
+<body>
+    <svg id="svg1" xmlns="http://www.w3.org/2000/svg" width="512px" height="512px"></svg>
+</body>
+
+</html>

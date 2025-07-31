@@ -35,7 +35,7 @@ function Auth({ session_id, setSessionId, notes, setNotes, loadNotes, setSaved }
     function loadCaptcha() {
         setImage("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg'></svg>");
         setShowCaptchaRequest(true);
-        fetch('/api/captcha', {
+        fetch('api/captcha', {
             method: 'GET',
             headers: {
                 'Content-Type': 'application/json'
@@ -67,7 +67,7 @@ function Auth({ session_id, setSessionId, notes, setNotes, loadNotes, setSaved }
         } else {
             setMessage("");
             setShowRequest(true);
-            fetch('/api/login', {
+            fetch('api/login', {
                 method: 'POST',
                 headers: {
                     'Content-Type': 'application/json'
