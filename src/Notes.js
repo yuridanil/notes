@@ -38,6 +38,7 @@ function Notes() {
       }
     };
     window.addEventListener('keydown', handleKeyDown);
+    document.title = Lang.title;
 
     saveInterval.current = setInterval(() => {
       if (session_id && !saved && !saveTimeout.current) {
