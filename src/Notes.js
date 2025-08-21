@@ -258,8 +258,8 @@ function Notes() {
     >
       <div className='status'>
         {{
-          '0': '',
-          '1': '', // <div className={"icon-edit s24"}></div>,
+          '0': <div className={"gray"}>{Lang.saved}</div>,
+          '1': <div className={"gray"}>{Lang.edited}</div>,
           '2': <div className={"spinner icon-spinner s24"}></div>,
           '3': <div className={"gray"}>{Lang.saveerror}</div>
         }[status]

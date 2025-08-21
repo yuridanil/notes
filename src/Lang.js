@@ -22,6 +22,8 @@ const langs = new Map([
     "wronguserpass": "Wrong username or password",
     "captchaerror": "Captcha error",
     "saveerror": "Save error",
+    "saved": "Saved",
+    "edited": "...🖉",
   }],
   ["ru", {
     "lang": "ru",
@@ -46,6 +48,8 @@ const langs = new Map([
     "wronguserpass": "Неверный логин или пароль",
     "captchaerror": "Ошибка проверки кода",
     "saveerror": "Ошибка сохранения",
+    "saved": "Сохранено",
+    "edited": "...🖉",
   }]
 ]);
 
