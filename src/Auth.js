@@ -103,52 +103,90 @@ function Auth({ session_id, setSessionId, notes, setNotes, loadNotes, setSaved }
         setNotes([]);
     }
 
+
+    function handleCloseClick(e) {
+        e.stopPropagation();
+        setShowForm(false);
+    }
+
+    function handleAuthClick(e) {
+        e.stopPropagation();
+        setShowForm(true);
+    }
+
+    function handleLogoutClick(e) {
+        e.stopPropagation();
+        logout();
+    }
+
+    function handleTouchFocus(e) {
+        e.stopPropagation();
+        e.target.focus();
+    }
+
+    function handleSignInClick(e) {
+        console.log(e);
+        e.stopPropagation();
+        login('signin', inputEmail, inputPassword);
+    }
+
+    function handleSignUpClick(e) {
+        console.log(e);
+        e.stopPropagation();
+        login('signup', inputEmail, inputPassword)
+    }
+
     return (
-        <div className='auth' onDoubleClick={e => e.stopPropagation()}>
+        <div className='auth' onDoubleClick={e => e.stopPropagation()} onTouchStart={(e) => e.stopPropagation()}>
             {session_id === "" ?
                 <>
-                    {
-                        showForm ?
-                            <form className='auth-form'>
-                                <div className='form-header'><div className='pointer' onClick={() => setShowForm(false)}>{Lang.x}</div></div>
-                                {showRequest &&
-                                    <div className='spinner-wrapper'>
-                                        <div className="spinner icon-spinner s24" />
-                                    </div>
-                                }
-                                <input name="email" className='form-input' type='text' placeholder={Lang.email} autoComplete='off' value={inputEmail}
-                                    onChange={e => setInputEmail(e.target.value)}
-                                    onKeyDown={(e) => { if (e.key === "Enter") document.querySelector('input[name="password"]').focus(); }}
-                                />
-                                <input name="password" className='form-input' type='password' placeholder={Lang.password} autoComplete='off' value={inputPassword}
-                                    onChange={e => setInputPassword(e.target.value)}
-                                    onKeyDown={(e) => { if (e.key === "Enter") document.querySelector('input[name="captcha"]').focus(); }}
-                                />
-                                <div className='flexrow'>
-                                    <img alt='' className='captcha' src={image} />
-                                    {showCaptchaRequest ? <div className="spinner icon-spinner s24" /> : <div className="reload pointer icon-reload" onClick={e => loadCaptcha()} />}
-                                    <input name="captcha" className='captcha-input' type='text' value={inputCaptcha}
-                                        onChange={e => setInputCaptcha(e.target.value)}
-                                        onKeyDown={(e) => { if (e.key === "Enter") login('signin', inputEmail, inputPassword); }}
-                                    />
-                                </div>
-                                <div className='flexrow'>
-                                    <div className='pointer' onClick={() => login('signin', inputEmail, inputPassword)}>{Lang.signin}</div>
-                                    <div className='pointer' onClick={() => login('signup', inputEmail, inputPassword)}>{Lang.signup}</div>
-                                </div>
-                                {message && <div className='red'>{message}</div>}
-                            </form>
-                            :
-                            <div className="auth-bar" >
-                                <span className='gray'>{Lang.authhint},&nbsp;</span>
-                                <span className='black pointer' onClick={() => { setShowForm(true); setMessage(""); }} onTouchStart={() => { setShowForm(true); setMessage(""); }}>{Lang.authorize}</span>
+                    <form className='auth-form' style={{ display: showForm ? 'flex' : 'none' }}>
+                        <div className='form-header'><div className='pointer'
+                            onClick={handleCloseClick}
+                            onTouchStart={handleCloseClick}
+                        >{Lang.x}</div></div>
+                        {showRequest &&
+                            <div className='spinner-wrapper'>
+                                <div className="spinner icon-spinner s24" />
                             </div>
-                    }
+                        }
+                        <input name="email" className='form-input' type='text' placeholder={Lang.email} autoComplete='off' value={inputEmail}
+                            onTouchStart={handleTouchFocus}
+                            onChange={e => setInputEmail(e.target.value)}
+                            onKeyDown={(e) => { if (e.key === "Enter") document.querySelector('input[name="password"]').focus(); }}
+                        />
+                        <input name="password" className='form-input' type='password' placeholder={Lang.password} autoComplete='off' value={inputPassword}
+                            onTouchStart={handleTouchFocus}
+                            onChange={e => setInputPassword(e.target.value)}
+                            onKeyDown={(e) => { if (e.key === "Enter") document.querySelector('input[name="captcha"]').focus(); }}
+                        />
+                        <div className='flexrow'>
+                            <img alt='' className='captcha' src={image} />
+                            {showCaptchaRequest ? <div className="spinner icon-spinner s24" /> : <div className="reload pointer icon-reload" onClick={loadCaptcha} onTouchStart={loadCaptcha}/>}
+                            <input name="captcha" className='captcha-input' type='text' value={inputCaptcha}
+                                onTouchStart={handleTouchFocus}
+                                onChange={e => setInputCaptcha(e.target.value)}
+                                onKeyDown={(e) => { if (e.key === "Enter") login('signin', inputEmail, inputPassword); }}
+                            />
+                        </div>
+                        <div className='flexrow'>
+                            <div className='pointer' onClick={handleSignInClick} onTouchStart={handleSignInClick}>{Lang.signin}</div>
+                            <div className='pointer' onClick={handleSignUpClick} onTouchStart={handleSignUpClick}>{Lang.signup}</div>
+                        </div>
+                        {message && <div className='red'>{message}</div>}
+                    </form>
+                    <div className="auth-bar" style={{ display: !showForm ? 'flex' : 'none' }}>
+                        <span className='gray'>{Lang.authhint},&nbsp;</span>
+                        <span className='black pointer'
+                            onClick={handleAuthClick}
+                            onTouchStart={handleAuthClick}
+                        >{Lang.authorize}</span>
+                    </div>
                 </>
                 :
-                <div className="auth-bar"><span className='gray'>{inputEmail}&nbsp;</span><span className='black pointer' onClick={logout} onTouchStart={logout}>{Lang.signout}</span></div>
+                <div className="auth-bar"><span className='gray'>{inputEmail}&nbsp;</span><span className='black pointer' onClick={handleLogoutClick} onTouchStart={handleLogoutClick}>{Lang.signout}</span></div>
             }
-        </div>
+        </div >
     );
 }
 

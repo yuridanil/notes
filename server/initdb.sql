@@ -28,6 +28,7 @@
 		confirmation_id varchar(255) null,
 		confirmed smallint DEFAULT 0,
 		failed int default 0,
+		ip varchar(64),
 		CONSTRAINT users_id_pk PRIMARY KEY (id),
 		CONSTRAINT users_username_uk UNIQUE (email)
 	);

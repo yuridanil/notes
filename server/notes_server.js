@@ -83,13 +83,14 @@ app.post('/api/login', async (req, res) => {
             if (result.rowCount === 0) {
                 message = 'captchaerror';
             } else {
+                let ip = req.headers['x-forwarded-for'] || req.socket.remoteAddress;
                 if (req.body.mode === 'signup') // signup new user
-                    sql = `INSERT INTO ${schema}.users (email, password, registration, session_id, expiration, confirmation_id) VALUES ($1, md5($2), current_timestamp, md5(random()::text), current_timestamp + interval '${EXPIRATION_INTERVAL}', md5(random()::text)) RETURNING id, email, session_id`;
+                    sql = `INSERT INTO ${schema}.users (email, password, registration, session_id, expiration, confirmation_id, ip) VALUES ($1, md5($2), current_timestamp, md5(random()::text), current_timestamp + interval '${EXPIRATION_INTERVAL}', md5(random()::text), $3) RETURNING id, email, session_id`;
                 else if (req.body.mode === 'signin') // signup new user
-                    sql = `UPDATE ${schema}.users set session_id = md5(random()::text), expiration = current_timestamp + interval '${EXPIRATION_INTERVAL}' WHERE email = $1 AND password = md5($2) RETURNING id, email, session_id`;
+                    sql = `UPDATE ${schema}.users set session_id = md5(random()::text), expiration = current_timestamp + interval '${EXPIRATION_INTERVAL}', ip = $3 WHERE email = $1 AND password = md5($2) RETURNING id, email, session_id`;
                 else // incorrect mode specified
                     sql = `RAISE`;
-                result = await pool.query(sql, [req.body.email, req.body.password]);
+                result = await pool.query(sql, [req.body.email, req.body.password, ip]);
                 if (result.rowCount === 1) {
                     message = 'ok';
                     session_id = result.rows[0].session_id;
